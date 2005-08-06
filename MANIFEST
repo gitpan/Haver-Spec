@@ -1,0 +1,7 @@
+Build.PL
+lib/Haver/Spec.pod
+lib/Haver/Spec/Auth.pod
+lib/Haver/Spec/Reg.pod
+MANIFEST			This list of files
+META.yml
+SIGNATURE    Added here by Module::Build

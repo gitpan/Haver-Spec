@@ -1,0 +1,264 @@
+=head1 NAME
+
+Haver::Spec - The core haver protocol.
+
+=head1 DESCRIPTION
+
+This document describes the core functionality of the Haver protocol.
+It is not as comprehensive as the Manual, but it is slightly better than keeping these
+things in plain text files.
+
+=head1 BEGIN YOUR FEAR
+
+Here's a general overview with examples. Lines beginning with C: are from the client,
+and lines beginning with S: are from the server. Items enclosed in square brackets
+are optional.
+
+=head2 HAVER/IDENT/HELLO
+
+C<$supported> is a comma-seperated last of supported extensions (See L</EXTENSIONS>)
+
+  C: HAVER  Foobar/1.0 [$supported]
+  S: HAVER  example.com  FoobarServer/1.0
+  C: IDENT  $name
+  S: HELLO  $name
+
+
+=head2 JOIN/PART/LIST
+
+C<$namespace> is one of "user", "service", or "channel".
+
+  C: JOIN  $channel 
+  S: JOIN  $channel  $user
+
+  C: PART  $channel
+  S: PART  $channel  $user
+
+  C: LIST  $channel  $namespace
+  S: LIST  $channel  $namespace  Thing1  Thing2  Thing3
+
+=head2 IN/TO/FROM
+
+Public messages (a message sent to everyone in a channel)
+
+  C: IN  $channel  $type  @args
+  S: IN  $channel  $user  $type  @args
+
+Private messages (a message sent ot a select group of users)
+
+  C: TO    $users  $type  @args
+  S: FROM  $users  $type  @args
+
+
+Clients must use any word (C</^\w+$/>) for $type,
+but it is typically "do" or "say".
+
+
+=head2 INFO
+
+  C: INFO  $namespace  $name
+  S: INFO  $namespace  $name  $key1  $value1  $key2  $value2 ...
+
+Sending this message results in the server sending back a message (S:INFO) with a list of
+key/value pairs. The keys vary depending on what is queried. Different server
+implementations may add extra keys too. Good user agents will allow the user to see any
+and all keys assigned to entity, even ones that did not exist when the user agent was
+programmed.
+
+=head3 Keys for Users and Services
+
+=over
+
+=item address
+
+A (probably masked) IP address. E.g. 1.2.3.*
+
+=item version
+
+The name and version number of the user-agent and service program, as sent by C:HAVER.
+
+=item idle
+
+The number of seconds the client has been idle. For users, idle is defined as the length
+of time between sending TO or IN messages.
+
+=item email
+
+The email address of the user or service. All registered services and users will have
+email addresses associated with them.
+
+=back
+
+=head3 Keys for Channels
+
+=over
+
+=item creator
+
+The name of the user that created the channel.
+
+=item created
+
+The date and time the channel was created.
+
+=back
+
+=head3 Keys for the Lobby
+
+=over
+
+=item booted
+
+The date and time the server was booted.
+
+=item hostname
+
+The hostname of the server.
+
+=item version
+
+The version name of the server, the same as from S:HAVER.
+
+=back
+
+=head2 POKE/OUCH
+
+POKE is used to see if the server is alive. The server will respond with OUCH.
+
+  C: POKE  $string
+  S: OUCH  $string
+  
+=head2 PING/PONG
+
+If the server sends PING, the client must respond with PONG, like so:
+
+  S: PING  $string
+  C: PONG  $string
+
+=head2 BYE/QUIT
+
+To disconnect, a client should send BYE:
+
+  C: BYE  $detail
+
+The server will reply with:
+
+  S: BYE  $type  $detail
+
+All users sharing a channel with the client will see:
+
+  S: QUIT  $sender  $type  $detail
+
+The $type of quit is one of several things:
+
+=over
+
+=item * 
+
+closed
+
+=item *
+
+error ($detail = error code?)
+
+=item *
+
+bye   ($detail = from BYE)
+
+=item *
+
+ping
+
+=item *
+
+ghost
+
+=item *
+
+kill ($detail = killer)
+
+=back
+
+=head1 YOU FAIL
+
+The server may respond to any given message with FAIL, which has the form of:
+
+  S: FAIL  $cmd  $error [@args]
+
+Where $cmd is the name of the message that failed, $error is the error name, and @args are
+bits of information related to the error.
+
+=head2 invalid.name
+
+You used a name that contains invalid characters.
+
+=head2 reserved.name
+
+You used a name that contains characters only special people are allowed to use.
+
+=head2 exists.user
+
+The user name you requested is in use.
+
+=head2 unknown.user
+
+That user name does not exist on the server.
+
+=head2 unknown.channel
+
+That channel name does not exist on the server.
+
+=head2 unknown.namespace
+
+The namespace (used in LIST, for example) is not one that the server is aware of.
+
+=head2 invalid.type
+
+The $type argument of an IN or TO message contained non-word characters.
+
+=head2 already.joined
+
+Tried to join a channel that you're already in.
+
+=head2 already.parted
+
+Tried to part a channel you're not in.
+
+
+=head1 I MEAN, HI
+
+I could describe the messages here in greater detail, but I think that belongs in the
+manual. There might be some other useful information to put in this section, too. But it
+is five thirteen in the morning, so I can't think of it.
+
+=head1 EXTENSIONS
+
+Currently defined extensions: L<Haver::Spec::Ghost>, L<Haver::Spec::Auth>,
+L<Haver::Spec::Reg>.
+
+=head1 AUTHOR
+
+Dylan William Hardison, E<lt>dylan@haverdev.orgE<gt>
+
+=head1 SEE ALSO
+
+L<http://www.haverdev.org/>.
+
+=head1 COPYRIGHT and LICENSE
+
+Copyright (C) 2005 by Dylan William Hardison. All Rights Reserved.
+
+This module is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This module is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this module; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+

@@ -1,0 +1,130 @@
+=head1 NAME
+
+Haver::Spec::Auth - The authentication extension.
+
+=head1 DESCRIPTION
+
+This document describes the authentication extension to L<Haver::Spec>.
+
+=head1 BEGIN YOUR FEAR
+
+The auth extension provides a login authentication system.
+A related extension, L<Haver::Spec::Reg> provides a way of registering under this auth
+system.
+
+The client must advertize it understands the auth extension. It does this by mentioning
+'auth' in the second arg of C:HAVER, like so:
+
+  C: HAVER  CoolClient/1.10  auth
+
+If the client does not advertize, the server will assume it does not understand any AUTH:
+commands. If the client requests a name that is registered and does not advertize it
+supports auth, the server will fail it with B<auth.impossible>.
+Otherwise:
+
+  C: IDENT  vadim
+  S: AUTH:TYPES  AUTH:BASIC  GPG:AUTH
+  C: AUTH:TYPE  AUTH:BASIC
+  S: AUTH:BASIC  $nonce  sha1  md5
+  C: AUTH:BASIC  $digest  $response
+
+If the authentication is successful, the server will send HELLO as per normal.
+If not, the server will fail the client with B<auth.fail>.
+
+$digest is one of the parameters after the first parameter of S:AUTH:BASIC.
+$response is the result of hashing the concatenation of $nonce and the user's passcode
+using the hash function named in $digest. The $response is always base64 encoded.
+
+See also L</PASSCODES> for instructions on creating a passcode.
+
+Thus, $response can be generated with the following perl function:
+
+	use Digest::MD5  'md5_base64';
+	use Digest::SHA1 'sha1_base64';
+	
+	sub response {
+		my ($digest, $nonce, $passcode) = @_;
+		if ($digest eq 'sha1') {
+			return sha1_base64($nonce . $passcode);
+		} elsif ($digest eq 'md5') {
+			return md5_base64($nonce . $passcode);
+		}
+	}
+
+
+=head1 YOU FAIL
+
+This extension introduces a few new errors.
+
+=head2 auth.impossible
+
+Raised when the client does not understand the auth extension. Always associated with
+IDENT.
+
+=head2 auth.fail
+
+Raised when authentication did not work because the passcode or whatever was wrong.
+This happens when the client understands authentication and after AUTH:* commands have
+been sent.
+
+=head2 unknown.digest
+
+Raised when the hashing (digest) algorithm requested by the client is unknown to the server.
+
+=head1 PASSCODES
+
+First, the problem: The server admin can't be trusted knowing the user's password.
+They might use it else where, for example. So the first idea that comes to mind is to hash
+it. Bingo, the server admin does not know the password now. But the server admin knows the
+hash! So they can still login to other haver servers that the user has accounts on.
+
+So, we hash the concatenation of the user's password and the hostname of the server.
+Now the hash is specific to the server, the admin can't figure out the hash for the user
+on other servers.
+
+But, the admin, being very evil, can find out what users have the same password.
+To prevent this, we hash the user's password, the user's name, and the hostname of the
+server. 
+
+This is something the client does, of course. It is very important the clients hash things
+in the same way. Thus all clients must use the sha1() hash function, and base64 encode its
+results.
+
+Also, both the hostname and username need to be lower-cased, as both are case insensitive.
+
+Thus, to generate passcodes in perl, the following function is used.
+
+	use Digest::SHA1 'sha1_base64';
+	
+	sub passcode {
+		my ($user, $password, $host) = @_;
+		sha1_base64($password . lc("$host$user"));
+	}
+
+=head1 AUTHOR
+
+Dylan William Hardison, E<lt>dylan@haverdev.orgE<gt>,
+with many thanks to muffin and bdonlan. Lots of ideas floated around, I just cherry-picked
+them to create this scheme.
+
+=head1 SEE ALSO
+
+L<http://www.haverdev.org/>.
+
+=head1 COPYRIGHT and LICENSE
+
+Copyright (C) 2005 by Dylan William Hardison. All Rights Reserved.
+
+This module is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This module is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this module; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA

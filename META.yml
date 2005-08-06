@@ -1,0 +1,9 @@
+---
+name: Haver-Spec
+version: 0.08
+author:
+  - Dylan Hardison <dylan@haverdev.org>
+abstract: ~
+license: gpl
+provides: {}
+generated_by: Module::Build version 0.26

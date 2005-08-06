@@ -1,0 +1,91 @@
+=head1 NAME
+
+Haver::Spec::Reg - The Registration extension
+
+=head1 DESCRIPTION
+
+This document describes the registration extension to L<Haver::Spec>.
+
+=head1 BEGIN YOUR FEAR
+
+This extension depends on the L<Haver::Spec::Auth> extension. In fact neither is very
+useful without the other. 
+
+=head2 Creating an account
+
+An account is created with REG:ACCOUNT, like so:
+
+   C: REG:ACCOUNT  $email  $passcode
+   S: REG:ACCOUNT  $name  $email
+
+Where $email is a standard email address, $passcode is as defined in
+L<Haver::Spec::Auth/PASSCODES>, and $name is the name you sent via B<IDENT> upon login.
+
+=head2 Changing a passcode
+
+Changing a passcode is done with REG:PASSCODE.
+
+  C: REG:PASSCODE  $passcode
+  S: REG:PASSCODE  $name
+
+The server doesn't echo the passcode for security reasons. Note that using this command
+without SSL is probably very insecure anyway.
+
+=head2 Changing the email address
+
+You can change the registered email address with REG:EMAIL:
+
+  C: REG:EMAIL  $email
+  S: REG:EMAIL  $name  $email
+
+=head2 Deleting an account
+
+Accounts can be removed, either by the owner or a server admin.
+
+  C: REG:REMOVE  $name
+  S: REG:REMOVE  $name
+
+
+
+=head1 YOU FAIL
+
+This extension introduces a few new errors.
+
+=head2 invalid.email
+
+Raised when the email address given in REG:ACCOUNT or REG:EMAIL is not a valid email address,
+according to the related RFCs.
+
+=head2 registered.user
+
+Raised when REG:ACCOUNT is called for by a user that is already registered.
+
+=head2 permission
+
+Raised when REG:REMOVE is used by non-admins on users other their self.
+
+=head1 AUTHOR
+
+Dylan William Hardison E<lt>dylan@haverdev.orgE<gt>.
+
+=head1 SEE ALSO
+
+L<Haver::Spec>, L<Haver::Spec::Auth>, L<http://www.haverdev.org/>.
+
+=head1 COPYRIGHT and LICENSE
+
+Copyright (C) 2005 by Dylan William Hardison. All Rights Reserved.
+
+This module is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This module is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this module; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
